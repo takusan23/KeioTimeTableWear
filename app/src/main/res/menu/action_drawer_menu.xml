@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/station_add_menu"
+        android:icon="@drawable/ic_favorite_border_white_24dp"
+        android:title="駅を登録する"></item>
+    <item
+        android:id="@+id/train_up_down_menu"
+        android:icon="@drawable/ic_arrow_upward_white_24dp"
+        android:title="新宿方面\n→京王八王子方面"></item>
+    <item
+        android:id="@+id/day_menu"
+        android:icon="@drawable/ic_work_white_24dp"
+        android:title="平日\n→休日"></item>
+    <item
+        android:id="@+id/home_near_menu"
+        android:icon="@drawable/ic_home_white_24dp"
+        android:title="自宅の最寄り駅時刻表\n登録"></item>
+    <item
+        android:id="@+id/work_near_menu"
+        android:icon="@drawable/ic_work_white_24dp"
+        android:title="会社・学校の最寄り駅時刻表\n登録"></item>
+    <item
+        android:id="@+id/download_menu"
+        android:icon="@drawable/ic_file_download_white_24dp"
+        android:title="ダウンロード"></item>
+</menu>
