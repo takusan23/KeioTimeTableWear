@@ -77,8 +77,10 @@ public class ListAdapter extends ArrayAdapter<ListItem> {
                         intent.putExtra("name", name);
                         getContext().startActivity(intent);
                     } else if (memo.contains("time_table_list")) {
+/*
                         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                         getContext().startActivity(intent);
+*/
                     }
 
                 }

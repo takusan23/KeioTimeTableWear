@@ -175,10 +175,12 @@ public class TimeTableActivity extends WearableActivity {
                     //登録
                     case R.id.home_near_menu:
                         editor.putString("home_near_url", getIntent().getStringExtra("URL"));
+                        editor.putString("home_near_name", getIntent().getStringExtra("name"));
                         editor.apply();
                         break;
                     case R.id.work_near_menu:
                         editor.putString("work_near_url", getIntent().getStringExtra("URL"));
+                        editor.putString("work_near_name", getIntent().getStringExtra("name"));
                         editor.apply();
                         break;
                     case R.id.download_menu:

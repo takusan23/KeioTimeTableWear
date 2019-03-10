@@ -3,6 +3,8 @@ package io.github.takusan23.keiotimetablewear;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -15,7 +17,11 @@ import android.widget.Adapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import io.github.takusan23.keiotimetablewear.Adapter.ListAdapter;
 import io.github.takusan23.keiotimetablewear.Adapter.ListItem;
@@ -28,12 +34,21 @@ public class MainActivity extends WearableActivity {
     private SharedPreferences pref_setting;
     private ArrayList<ListItem> arrayList;
     private ListAdapter adapter;
+    private SQLiteTimeTable helper;
+    private SQLiteDatabase sqLiteDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         pref_setting = PreferenceManager.getDefaultSharedPreferences(this);
+        if (helper == null) {
+            helper = new SQLiteTimeTable(MainActivity.this);
+        }
+        if (sqLiteDatabase == null) {
+            sqLiteDatabase = helper.getWritableDatabase();
+        }
+
         // Top Navigation Drawer
         mWearableNavigationDrawer =
                 (WearableNavigationDrawerView) findViewById(R.id.top_navigation_drawer);
@@ -48,10 +63,18 @@ public class MainActivity extends WearableActivity {
                         loadFavouriteStationList();
                         break;
                     case 1:
-                        loadNearStation("home_near_url");
+                        adapter.clear();
+                        loadNearAndTimeStation("home_near_name", "up", "新宿方面");
+                        loadNearAndTimeStation("home_near_name", "down", "京王八王子・高尾山口方面");
+                        loadNearAndTimeStation("home_near_name", "up_holiday", "休日 新宿方面");
+                        loadNearAndTimeStation("home_near_name", "down_holiday", "休日 京王八王子・高尾山口方面");
                         break;
                     case 2:
-                        loadNearStation("work_near_url");
+                        adapter.clear();
+                        loadNearAndTimeStation("work_near_name", "up", "新宿方面");
+                        loadNearAndTimeStation("work_near_name", "down", "京王八王子・高尾山口方面");
+                        loadNearAndTimeStation("work_near_name", "up_holiday", "休日 新宿方面");
+                        loadNearAndTimeStation("work_near_name", "down_holiday", "休日 京王八王子・高尾山口方面");
                         break;
                     case 3:
                         loadTimeTable();
@@ -233,6 +256,102 @@ public class MainActivity extends WearableActivity {
         } else {
             Toast.makeText(this, "登録されていません", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * 自宅・最寄りの今の時間に近い時刻表を表示
+     *
+     * @param name         StationName
+     * @param up_down      上り下り休日上り下り
+     * @param up_down_text 上りだよって文章
+     */
+    private void loadNearAndTimeStation(String name, String up_down, String up_down_text) {
+        //一時
+        int temp = 0;
+        //現在の時刻
+        String hour = String.valueOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY));
+        //データベース表示
+        //データ取り出し
+        Cursor cursor = sqLiteDatabase.query(
+                "stationdb",
+                new String[]{"station", "memo", "up_down", "url", "css_1", "css_2", "time", "hour", "minute"},
+                "station=?",
+                new String[]{pref_setting.getString(name, "") + "-" + up_down},
+                null,
+                null,
+                null
+        );
+        //はじめに移動
+        cursor.moveToFirst();
+
+        //取り出し
+        for (int i = 0; i < cursor.getCount(); i++) {
+            try {
+                JSONArray text_JsonArray = new JSONArray(cursor.getString(6));
+                JSONArray url_JsonArray = new JSONArray(cursor.getString(3));
+                JSONArray css_1_JsonArray = new JSONArray(cursor.getString(4));
+                JSONArray css_2_JsonArray = new JSONArray(cursor.getString(5));
+                JSONArray hour_JsonArray = new JSONArray(cursor.getString(7));
+                JSONArray minute_JsonArray = new JSONArray(cursor.getString(8));
+
+                for (int json_count = 0; json_count < text_JsonArray.length(); json_count++) {
+                    //現在の時間
+                    if (((String) hour_JsonArray.get(json_count)).contains(hour + "時")) {
+                        //分
+                        String minute = numberOnly(minute_JsonArray.getString(json_count));
+                        String minute_old = numberOnly(minute_JsonArray.getString(json_count + 1));
+                        //一個先とと比較？
+                        temp = Integer.valueOf(minute) - Calendar.getInstance().get(Calendar.MINUTE);
+                        if (temp > Integer.valueOf(minute_old) - Calendar.getInstance().get(Calendar.MINUTE)) {
+                            ArrayList<String> item = new ArrayList<>();
+                            item.add("time_table_list");
+                            item.add(up_down_text + "\n" + (String) text_JsonArray.get(json_count));
+                            item.add("");
+                            item.add("https://keio.ekitan.com/sp/" + url_JsonArray.get(json_count));
+                            item.add((String) css_1_JsonArray.get(json_count));
+                            item.add((String) css_2_JsonArray.get(json_count));
+                            final ListItem listItem = new ListItem(item);
+                            //UIスレッド限定な模様
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    adapter.add(listItem);
+                                }
+                            });
+                        }
+                    }
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
+            //次の項目へ
+            cursor.moveToNext();
+        }
+
+        //最後
+        cursor.close();
+        // ListViewにArrayAdapter
+        listView.setAdapter(adapter);
+
+    }
+
+    private String numberOnly(String text) {
+        text = text.replace("分", "");
+        text = text.replace("本", "");
+        text = text.replace("府", "");
+        text = text.replace("調", "");
+        text = text.replace("シン", "");
+        text = text.replace("桜", "");
+        text = text.replace("瑞", "");
+        text = text.replace("山", "");
+        text = text.replace("高", "");
+        text = text.replace("(", "");
+        text = text.replace(")", "");
+        text = text.replace(" ", "");
+        return text;
     }
 
 
