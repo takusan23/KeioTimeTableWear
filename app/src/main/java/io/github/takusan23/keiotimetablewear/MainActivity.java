@@ -303,21 +303,43 @@ public class MainActivity extends WearableActivity {
                         //一個先とと比較？
                         temp = Integer.valueOf(minute) - Calendar.getInstance().get(Calendar.MINUTE);
                         if (temp > Integer.valueOf(minute_old) - Calendar.getInstance().get(Calendar.MINUTE)) {
-                            ArrayList<String> item = new ArrayList<>();
-                            item.add("time_table_list");
-                            item.add(up_down_text + "\n" + (String) text_JsonArray.get(json_count));
-                            item.add("");
-                            item.add("https://keio.ekitan.com/sp/" + url_JsonArray.get(json_count));
-                            item.add((String) css_1_JsonArray.get(json_count));
-                            item.add((String) css_2_JsonArray.get(json_count));
-                            final ListItem listItem = new ListItem(item);
-                            //UIスレッド限定な模様
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    adapter.add(listItem);
+                            //0時のとき10時や20時が出ないようにする
+                            if (Calendar.getInstance().get(Calendar.MINUTE) >= 9) {
+                                //1xと2x時は対象外へ
+                                if (!hour_JsonArray.getString(json_count).contains("1" + String.valueOf(hour)) && !hour_JsonArray.getString(json_count).contains("2" + String.valueOf(hour))) {
+                                    ArrayList<String> item = new ArrayList<>();
+                                    item.add("station_list");
+                                    item.add(up_down_text + "\n" + (String) text_JsonArray.get(json_count));
+                                    item.add("");
+                                    item.add("https://keio.ekitan.com/sp/" + url_JsonArray.get(json_count));
+                                    item.add((String) css_1_JsonArray.get(json_count));
+                                    item.add((String) css_2_JsonArray.get(json_count));
+                                    final ListItem listItem = new ListItem(item);
+                                    //UIスレッド限定な模様
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            adapter.add(listItem);
+                                        }
+                                    });
                                 }
-                            });
+                            } else {
+                                ArrayList<String> item = new ArrayList<>();
+                                item.add("station_list");
+                                item.add(up_down_text + "\n" + (String) text_JsonArray.get(json_count));
+                                item.add("");
+                                item.add("https://keio.ekitan.com/sp/" + url_JsonArray.get(json_count));
+                                item.add((String) css_1_JsonArray.get(json_count));
+                                item.add((String) css_2_JsonArray.get(json_count));
+                                final ListItem listItem = new ListItem(item);
+                                //UIスレッド限定な模様
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        adapter.add(listItem);
+                                    }
+                                });
+                            }
                         }
                     }
                 }
@@ -348,6 +370,7 @@ public class MainActivity extends WearableActivity {
         text = text.replace("瑞", "");
         text = text.replace("山", "");
         text = text.replace("高", "");
+        text = text.replace("つ", "");
         text = text.replace("(", "");
         text = text.replace(")", "");
         text = text.replace(" ", "");
